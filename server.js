@@ -27,7 +27,10 @@ io.on("connection", (socket) => {
 });
 
 const Disconnect = () => {
-  if (clients > 0) clients--;
+  if (clients > 0) {
+    clients--;
+    this.broadcast("RemoveVideo");
+  };
 };
 
 const SendOffer = (offer) => {
@@ -38,4 +41,4 @@ const SendAnswer = (data) => {
   this.broadcast.emit("BackAnswer", data);
 };
 
-http.listen(port, `Server active on port ${port}`);
+http.listen(port, () => console.log(`Server active on port ${port}`));
