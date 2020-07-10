@@ -8173,8 +8173,11 @@ function config (name) {
 },{}],34:[function(require,module,exports){
 let Peer = require("simple-peer");
 let socket = io();
-let video = document.querySelector("video");
+const video = document.querySelector("video");
+const filter = document.querySelector("#filter");
+
 let client = {};
+let currentFilter;
 
 /** Get stream */
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -8182,6 +8185,12 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   socket.emit("NewClient");
   video.srcObject = stream;
   video.play();
+
+  filter.addEventListener("change", (event) => {
+    let changedFilter = event.target.value;
+    video.style.filter = changedFilter;
+    event.preventDefault();
+  })
 
   /** Initialize a  peer */
   const InitPeer = (type) => {

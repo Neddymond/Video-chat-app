@@ -1,3 +1,19 @@
 body {
   background-color: #f4f4f4;
 }
+
+video {
+  width: 100%;
+}
+
+.select {
+  height: 30px;
+}
+
+.h-90 {
+  height: 90% !important;
+}
+
+.h-10 {
+  height: 10% !important;
+}
