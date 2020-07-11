@@ -2,6 +2,7 @@ let Peer = require("simple-peer");
 let socket = io();
 const video = document.querySelector("video");
 const filter = document.querySelector("#filter");
+const checkBox = document.querySelector("#theme");
 
 let client = {};
 let currentFilter;
@@ -14,43 +15,49 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   video.play();
 
   filter.addEventListener("change", (event) => {
-    let changedFilter = event.target.value;
-    video.style.filter = changedFilter;
+    let currentFilter = event.target.value;
+    video.style.filter = currentFilter;
+    SendFilter(currentFilter);
     event.preventDefault();
-  })
+  });
 
   /** Initialize a  peer */
-  const InitPeer = (type) => {
+  function InitPeer(type) {
     let peer = new Peer({ initiator: (type === "init")
       ? true
       : false, 
-      stream: stream,
+      stream,
       trickle: false }
     );
 
     // Create video on connection to stream
-    peer.on("stream", () => {
+    peer.on("stream", function() {
       CreateVideo(stream);
     });
 
-    // Close and destroy peer on event close
-    peer.on("close", () => {
-      peer.destroy();
+    peer.on("data", function(data) {
+      let decodedData = new TextDecoder("utf-8").decode(data);
+      let peervideo = document.querySelector("#peerDiv");
+      peervideo.style.filter = decodedData;
     });
 
     return peer;
   };
 
   /** Remove video element when a client dosconnects. */
-  const RemoveVideo = () => {
+  function RemovePeer() {
     document.getElementById("peerVideo").remove();
+    document.getElementById("muteText").remove();
+    if (client.peer) {
+        client.peer.destroy()
+    }
   };
 
   /** For peer of type init */
-  const MakePeer = () => {
+  function MakePeer() {
     client.gotAnswer = false;
     let peer = InitPeer("init");
-    peer.on("signal", (data) => {
+    peer.on("signal", function(data) {
       if (!client.gotAnswer) {
         socket.emit("Offer", data);
       }
@@ -61,12 +68,13 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 
   /** When we get an offer from a client, send them an answer. */
   const FrontAnswer = (offer) => {
-     let peer = InitPeer("initPeer");
-     peer.on("signal", (data) => {
-       socket.emit("Answer", data);
-     });
+    let peer = InitPeer("notInit");
+    peer.on("signal", (data) => {
+      socket.emit("Answer", data);
+    });
 
-     peer.signal(offer);
+    peer.signal(offer);
+    client.peer = peer;
   };
 
   /** When we get an answer from the backend, set the client's "gotAnswer" variable to true. */
@@ -84,10 +92,17 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
     video.class = "embed-responsive-item";
     document.querySelector("#peerDiv").appendChild(video);
     video.play();
+    setTimeout(() => SendFilter(currentFilter), 500);
   };
 
   const sessionActive = () => {
     document.write("Session is active. Please come back later.");
+  };
+
+  function SendFilter(filter) {
+    if (client.peer) {
+      client.peer.send(filter);
+    }
   };
 
   /** Listen for events */
@@ -95,6 +110,12 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   socket.on("BackOffer", FrontAnswer);
   socket.on("BackAnswer", SignalAnswer);
   socket.on("SessionActive", sessionActive);
-  socket.on("RemoveVideo", RemoveVideo);
+  socket.on("Disconnect", RemovePeer);
 })
 .catch((err) => document.write(err));
+
+checkBox.addEventListener("click", () => {
+  checkBox.checked === true
+    ? document.body.style.backgroundColor = "#212529"
+    : document.body.style.backgroundColor = "#fff"
+});

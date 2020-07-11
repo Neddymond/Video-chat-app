@@ -9,7 +9,7 @@ app.use(express.static(`${__dirname}/public`));
 let clients = 0;
 
 io.on("connection", (socket) => {
-  socket.on("NewClient", ()=> {
+  socket.on("NewClient", function() {
     if (clients < 2) {
       if (clients === 1) {
         this.emit("CreatePeer");
@@ -21,23 +21,25 @@ io.on("connection", (socket) => {
     clients++;
   });
 
-  socket.on("Disconnection", Disconnect);
+  socket.on("disconnect", Disconnect);
   socket.on("Offer", SendOffer);
   socket.on("Answer", SendAnswer);
 });
 
-const Disconnect = () => {
+function Disconnect() {
   if (clients > 0) {
+    if (clients <= 2) {
+      this.broadcast.emit("Disconnect");
+    }
     clients--;
-    this.broadcast("RemoveVideo");
   };
 };
 
-const SendOffer = (offer) => {
+function SendOffer(offer) {
   this.broadcast.emit("BackOffer", offer);
 };
 
-const SendAnswer = (data) => {
+function SendAnswer(data) {
   this.broadcast.emit("BackAnswer", data);
 };
 
