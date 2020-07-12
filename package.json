@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "nodemon -e html,js server.js",
+    "start": "node -e html,js server.js",
     "watch": "npx watchify ./public/main.js -o ./public/bundle.js"
   },
   "engines": {
